@@ -42,6 +42,10 @@ import { LoadComponentsReturnType, ManifestItem } from './load-components'
 import optimizeAmp from './optimize-amp'
 import { UnwrapPromise } from '../../lib/coalesced-function'
 import { GetStaticProps, GetServerSideProps } from '../../types'
+import {
+  tryStripABTestingPayloadFromQuery,
+  ABTestingContextProvider,
+} from '../../lib/abTestingInfra'
 
 function noRouter() {
   const message =
@@ -494,7 +498,9 @@ export async function renderToHTML(
         <LoadableContext.Provider
           value={moduleName => reactLoadableModules.push(moduleName)}
         >
-          {children}
+          <ABTestingContextProvider path={router.asPath}>
+            {children}
+          </ABTestingContextProvider>
         </LoadableContext.Provider>
       </AmpStateContext.Provider>
     </RouterContext.Provider>
@@ -525,6 +531,7 @@ export async function renderToHTML(
       let data: UnwrapPromise<ReturnType<GetStaticProps>>
 
       try {
+        query = tryStripABTestingPayloadFromQuery(query)
         data = await getStaticProps!({
           ...(pageIsDynamic ? { params: query as ParsedUrlQuery } : undefined),
           ...(previewData !== false
