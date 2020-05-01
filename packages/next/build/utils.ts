@@ -17,6 +17,7 @@ import { getRouteMatcher, getRouteRegex } from '../next-server/lib/router/utils'
 import { isDynamicRoute } from '../next-server/lib/router/utils/is-dynamic'
 import { findPageFile } from '../server/lib/find-page-file'
 import { GetStaticPaths } from 'next/types'
+import { tryAddABTestingPayload } from './abTestingInfra'
 
 const fileGzipStats: { [k: string]: Promise<number> } = {}
 const fsStatGzip = (file: string) => {
@@ -755,7 +756,18 @@ export async function isPageStatic(
       ;({
         paths: prerenderRoutes,
         fallback: prerenderFallback,
-      } = await buildStaticPaths(page, mod.getStaticPaths))
+      } = await buildStaticPaths(page, async () => {
+        console.log(`Page: ${page}. CWD: ${process.cwd()}`)
+        const staticPaths = await mod.getStaticPaths()
+        console.log(`Got static paths object -> ${JSON.stringify(staticPaths)}`)
+
+        // TODO: paths can have different params, not only 'handle' -> need to think what to do with other cases
+        const pathsWithAbTests = tryAddABTestingPayload(staticPaths.paths)
+        staticPaths.paths = pathsWithAbTests
+        console.log(`Paths with AB Tests -> ${JSON.stringify(staticPaths)}`)
+
+        return staticPaths
+      }))
     }
 
     const config = mod.config || {}
