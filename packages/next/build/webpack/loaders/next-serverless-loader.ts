@@ -233,6 +233,7 @@ const nextServerlessLoader: loader.Loader = function () {
     export const unstable_getStaticParams = ComponentInfo['unstable_getStaticParam' + 's']
     export const getStaticProps = ComponentInfo['getStaticProp' + 's']
     export const getStaticPaths = ComponentInfo['getStaticPath' + 's']
+    export const permuteStaticPaths = ComponentInfo['permuteStaticPath' + 's']
     export const getServerSideProps = ComponentInfo['getServerSideProp' + 's']
 
     // kept for detecting legacy exports
@@ -263,6 +264,7 @@ const nextServerlessLoader: loader.Loader = function () {
         getStaticProps,
         getServerSideProps,
         getStaticPaths,
+        permuteStaticPaths,
         reactLoadableManifest,
         canonicalBase: "${canonicalBase}",
         buildId: "${buildId}",
@@ -389,6 +391,7 @@ const nextServerlessLoader: loader.Loader = function () {
         const result = await renderToHTML(req, res, "/_error", parsedUrl.query, Object.assign({}, options, {
           getStaticProps: undefined,
           getStaticPaths: undefined,
+          permuteStaticPaths: undefined,
           getServerSideProps: undefined,
           Component: Error,
           err: res.statusCode === 404 ? undefined : err
