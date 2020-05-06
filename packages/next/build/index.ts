@@ -806,13 +806,36 @@ export default async function build(dir: string, conf = null): Promise<void> {
       if (isSsg) {
         // For a non-dynamic SSG page, we must copy its data file from export.
         if (!isDynamic) {
-          await moveExportedPage(page, file, true, 'json')
+          if (additionalSsgPaths.has(page)) {
+            // TODO: maybe we should move it to a separate function? see duplicated code below
+            const extraRoutes = additionalSsgPaths.get(page) || []
+            for (const route of extraRoutes) {
+              await moveExportedPage(route, route, true, 'html')
+              await moveExportedPage(route, route, true, 'json')
+              finalPrerenderRoutes[route] = {
+                initialRevalidateSeconds:
+                  exportConfig.initialPageRevalidationMap[route],
+                srcRoute: page,
+                dataRoute: path.posix.join(
+                  '/_next/data',
+                  buildId,
+                  `${normalizePagePath(route)}.json`
+                ),
+              }
+            }
+          } else {
+            await moveExportedPage(page, file, true, 'json')
 
-          finalPrerenderRoutes[page] = {
-            initialRevalidateSeconds:
-              exportConfig.initialPageRevalidationMap[page],
-            srcRoute: null,
-            dataRoute: path.posix.join('/_next/data', buildId, `${file}.json`),
+            finalPrerenderRoutes[page] = {
+              initialRevalidateSeconds:
+                exportConfig.initialPageRevalidationMap[page],
+              srcRoute: null,
+              dataRoute: path.posix.join(
+                '/_next/data',
+                buildId,
+                `${file}.json`
+              ),
+            }
           }
         } else {
           // For a dynamic SSG page, we did not copy its data exports and only

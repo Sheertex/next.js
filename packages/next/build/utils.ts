@@ -16,7 +16,6 @@ import { getRouteMatcher, getRouteRegex } from '../next-server/lib/router/utils'
 import { isDynamicRoute } from '../next-server/lib/router/utils/is-dynamic'
 import { findPageFile } from '../server/lib/find-page-file'
 import { GetStaticPaths } from 'next/types'
-import { tryAddABTestingPayload } from '../lib/abTestingInfra'
 
 const fileGzipStats: { [k: string]: Promise<number> } = {}
 const fsStatGzip = (file: string) => {
@@ -691,6 +690,7 @@ export async function isPageStatic(
     const hasGetInitialProps = !!(Comp as any).getInitialProps
     const hasStaticProps = !!mod.getStaticProps
     const hasStaticPaths = !!mod.getStaticPaths
+    const hasPermutations = !!mod.permuteStaticPaths
     const hasServerProps = !!mod.getServerSideProps
     const hasLegacyServerProps = !!mod.unstable_getServerProps
     const hasLegacyStaticProps = !!mod.unstable_getStaticProps
@@ -751,24 +751,23 @@ export async function isPageStatic(
       )
     }
 
+    if (!hasStaticProps && hasPermutations) {
+      throw new Error(
+        `permuteStaticPaths was added without a getStaticProps in ${page}. Without getStaticProps, permuteStaticPaths does nothing`
+      )
+    }
+
     let prerenderRoutes: Array<string> | undefined
     let prerenderFallback: boolean | undefined
     if (hasStaticProps && hasStaticPaths) {
       ;({
         paths: prerenderRoutes,
         fallback: prerenderFallback,
-      } = await buildStaticPaths(page, async () => {
-        console.log(`Page: ${page}. CWD: ${process.cwd()}`)
-        const staticPaths = await mod.getStaticPaths()
-        console.log(`Got static paths object -> ${JSON.stringify(staticPaths)}`)
+      } = await buildStaticPaths(page, mod.getStaticPaths))
+    }
 
-        // TODO: paths can have different params, not only 'handle' -> need to think what to do with other cases
-        const pathsWithAbTests = tryAddABTestingPayload(staticPaths.paths)
-        staticPaths.paths = pathsWithAbTests
-        console.log(`Paths with AB Tests -> ${JSON.stringify(staticPaths)}`)
-
-        return staticPaths
-      }))
+    if (hasPermutations) {
+      prerenderRoutes = await mod.permuteStaticPaths(prerenderRoutes || [page])
     }
 
     const config = mod.config || {}

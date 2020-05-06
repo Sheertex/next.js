@@ -42,10 +42,6 @@ import { LoadComponentsReturnType, ManifestItem } from './load-components'
 import optimizeAmp from './optimize-amp'
 import { UnwrapPromise } from '../../lib/coalesced-function'
 import { GetStaticProps, GetServerSideProps } from '../../types'
-import {
-  tryStripABTestingPayloadFromQuery,
-  ABTestingContextProvider,
-} from '../../lib/abTestingInfra'
 
 function noRouter() {
   const message =
@@ -312,6 +308,7 @@ export async function renderToHTML(
     ErrorDebug,
     getStaticProps,
     getStaticPaths,
+    permuteStaticPaths,
     getServerSideProps,
     isDataReq,
     params,
@@ -421,6 +418,12 @@ export async function renderToHTML(
     )
   }
 
+  if (!!permuteStaticPaths && !isSSG) {
+    throw new Error(
+      `permuteStaticPaths was added without a getStaticProps in ${pathname}. Without getStaticProps, permuteStaticPaths does nothing`
+    )
+  }
+
   if (dev) {
     const { isValidElementType } = require('react-is')
     if (!isValidElementType(Component)) {
@@ -505,9 +508,7 @@ export async function renderToHTML(
         <LoadableContext.Provider
           value={moduleName => reactLoadableModules.push(moduleName)}
         >
-          <ABTestingContextProvider path={router.asPath}>
-            {children}
-          </ABTestingContextProvider>
+          {children}
         </LoadableContext.Provider>
       </AmpStateContext.Provider>
     </RouterContext.Provider>
@@ -538,7 +539,6 @@ export async function renderToHTML(
       let data: UnwrapPromise<ReturnType<GetStaticProps>>
 
       try {
-        query = tryStripABTestingPayloadFromQuery(query)
         data = await getStaticProps!({
           ...(pageIsDynamic ? { params: query as ParsedUrlQuery } : undefined),
           ...(previewData !== false
