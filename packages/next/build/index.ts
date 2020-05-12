@@ -873,6 +873,7 @@ export default async function build(dir: string, conf = null): Promise<void> {
           if (additionalSsgPaths.has(page)) {
             // TODO: maybe we should move it to a separate function? see duplicated code below
             const extraRoutes = additionalSsgPaths.get(page) || []
+
             for (let route of extraRoutes) {
               if (route === '/') {
                 route = 'index'
