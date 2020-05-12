@@ -848,7 +848,13 @@ export default async function build(dir: string, conf = null): Promise<void> {
       // The dynamic version of SSG pages are only prerendered if the fallback
       // is enabled. Below, we handle the specific prerenders of these.
       if (!(isSsg && isDynamic && !isSsgFallback)) {
-        await moveExportedPage(page, file, isSsg, 'html')
+        // Move page file only if it doesn't have specific version
+        if (
+          !additionalSsgPaths.has(page) ||
+          additionalSsgPaths.get(page)!.indexOf(page) === -1
+        ) {
+          await moveExportedPage(page, file, isSsg, 'html')
+        }
       }
 
       if (hasAmp && (!isSsg || (isSsg && !isDynamic))) {
@@ -865,7 +871,12 @@ export default async function build(dir: string, conf = null): Promise<void> {
           if (additionalSsgPaths.has(page)) {
             // TODO: maybe we should move it to a separate function? see duplicated code below
             const extraRoutes = additionalSsgPaths.get(page) || []
-            for (const route of extraRoutes) {
+
+            for (let route of extraRoutes) {
+              if (route === '/') {
+                route = 'index'
+              }
+
               await moveExportedPage(route, route, true, 'html')
               await moveExportedPage(route, route, true, 'json')
               finalPrerenderRoutes[route] = {
