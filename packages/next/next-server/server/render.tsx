@@ -533,7 +533,9 @@ export async function renderToHTML(
 
       try {
         data = await getStaticProps!({
-          ...(pageIsDynamic ? { params: query as ParsedUrlQuery } : undefined),
+          ...(pageIsDynamic
+            ? { params: query as ParsedUrlQuery }
+            : { params: { path: asPath } }),
           ...(previewData !== false
             ? { preview: true, previewData: previewData }
             : undefined),
