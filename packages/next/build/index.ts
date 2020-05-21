@@ -872,11 +872,10 @@ export default async function build(dir: string, conf = null): Promise<void> {
             // TODO: maybe we should move it to a separate function? see duplicated code below
             const extraRoutes = additionalSsgPaths.get(page) || []
             for (let route of extraRoutes) {
-              
               if (route === '/') {
                 route = 'index'
               }
-              
+
               await moveExportedPage(route, route, true, 'html')
               await moveExportedPage(route, route, true, 'json')
               finalPrerenderRoutes[route] = {
@@ -886,11 +885,6 @@ export default async function build(dir: string, conf = null): Promise<void> {
                 dataRoute: path.posix.join(
                   '/_next/data',
                   buildId,
-                  `${normalizePagePath(route)}.json`
-                ),
-              }
-            }
-          } else {
                   `${normalizePagePath(route)}.json`
                 ),
               }
