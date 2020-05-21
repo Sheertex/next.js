@@ -769,14 +769,6 @@ export async function isPageStatic(
       prerenderRoutes = await mod.permuteStaticPaths(prerenderRoutes || [page])
     }
 
-    if (hasPermutations) {
-      prerenderRoutes = await mod.permuteStaticPaths(prerenderRoutes || [page])
-    }
-
-    if (hasPermutations) {
-      prerenderRoutes = await mod.permuteStaticPaths(prerenderRoutes || [page])
-    }
-
     const config = mod.config || {}
     return {
       isStatic: !hasStaticProps && !hasGetInitialProps && !hasServerProps,
