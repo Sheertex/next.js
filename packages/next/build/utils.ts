@@ -667,6 +667,7 @@ export async function isPageStatic(
     const hasGetInitialProps = !!(Comp as any).getInitialProps
     const hasStaticProps = !!mod.getStaticProps
     const hasStaticPaths = !!mod.getStaticPaths
+    const hasPermutations = !!mod.permuteStaticPaths
     const hasServerProps = !!mod.getServerSideProps
     const hasLegacyServerProps = !!mod.unstable_getServerProps
     const hasLegacyStaticProps = !!mod.unstable_getStaticProps
@@ -727,6 +728,12 @@ export async function isPageStatic(
       )
     }
 
+    if (!hasStaticProps && hasPermutations) {
+      throw new Error(
+        `permuteStaticPaths was added without a getStaticProps in ${page}. Without getStaticProps, permuteStaticPaths does nothing`
+      )
+    }
+
     let prerenderRoutes: Array<string> | undefined
     let prerenderFallback: boolean | undefined
     if (hasStaticProps && hasStaticPaths) {
@@ -734,6 +741,10 @@ export async function isPageStatic(
         paths: prerenderRoutes,
         fallback: prerenderFallback,
       } = await buildStaticPaths(page, mod.getStaticPaths))
+    }
+
+    if (hasPermutations) {
+      prerenderRoutes = await mod.permuteStaticPaths(prerenderRoutes || [page])
     }
 
     const config = mod.config || {}

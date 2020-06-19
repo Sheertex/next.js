@@ -103,6 +103,10 @@ export type GetStaticPaths<
   fallback: boolean
 }>
 
+export type PermuteStaticPaths = (
+  paths: Array<string>
+) => Promise<Array<string>>
+
 export type GetServerSidePropsContext<
   Q extends ParsedUrlQuery = ParsedUrlQuery
 > = {
